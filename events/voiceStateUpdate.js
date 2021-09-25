@@ -8,8 +8,6 @@ const { VoiceState, MessageEmbed} = require("discord.js");
  * @returns {Promise<void>}
  */
 module.exports = async (client, oldState, newState) => {
-    // skip bot users, just like the message event
-    if (newState.member.user.bot) return;
 
     // get guild and player
     let guildId = newState.guild.id;
@@ -24,9 +22,10 @@ module.exports = async (client, oldState, newState) => {
     if (oldState.channel === null && newState.channel !== null) stateChange.type = "JOIN";
     if (oldState.channel !== null && newState.channel === null) stateChange.type = "LEAVE";
     if (oldState.channel !== null && newState.channel !== null) stateChange.type = "MOVE";
-    if (oldState.channel === null && newState.channel === null) return; // you never know, right
-
-    // move check first as it changes type
+    if (oldState.channel === null && newState.channel === null) return;
+    if (newState.serverMute == true && oldState.serverMute == false) return player.pause(true);
+    if (newState.serverMute == false && oldState.serverMute == true) return player.pause(false);
+    // move check first as it changes type  
     if (stateChange.type === "MOVE") {
         if (oldState.channel.id === player.voiceChannel) stateChange.type = "LEAVE";
         if (newState.channel.id === player.voiceChannel) stateChange.type = "JOIN";
@@ -47,7 +46,7 @@ module.exports = async (client, oldState, newState) => {
                 let emb = new MessageEmbed()
                     .setAuthor(`Resuming paused queue`, client.botconfig.IconURL)
                     .setColor("RANDOM")
-                    .setDescription(`Resuming playback because all of you left me with music to play all alone`);
+                    .setDescription(`Resuming playback because you left me with music to play when all of you just left me all alone`);
                 await client.channels.cache.get(player.textChannel).send(emb);
 
                 // update the now playing message and bring it to the front
@@ -63,7 +62,7 @@ module.exports = async (client, oldState, newState) => {
 
                 let emb = new MessageEmbed()
                     .setAuthor(`Paused!`, client.botconfig.IconURL)
-                    .setColor(client.botconfig.EmbedColor)
+                    .setColor("RANDOM")
                     .setDescription(`The player has been paused because everybody left`);
                 await client.channels.cache.get(player.textChannel).send(emb);
             }
